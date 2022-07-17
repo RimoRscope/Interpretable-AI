@@ -1,0 +1,116 @@
+---
+title: "Class 6"
+Models: Decision Trees
+---
+
+
+
+```{r}
+library(mlr)
+library(tidyverse)
+```
+
+```{r}
+data(Zoo, package = "mlbench")
+glimpse(Zoo)
+```
+
+```{r}
+zxx <- as_tibble(Zoo)
+class(zxx)
+```
+
+```{r}
+zxx
+```
+
+```{r}
+zxx <- mutate_if(zx, is.logical, as.factor)
+```
+
+```{r}
+zxx <- mutate_all(zxx, as.factor)
+```
+
+```{r}
+zTask <- makeClassifTask(data = zxx, target = "type")
+```
+
+```{r}
+tree <- makeLearner("classif.rpart")
+```
+
+```{r}
+getParamSet(tree)
+```
+
+
+
+
+```{r}
+myHyperParamsTree <- makeParamSet(
+  makeIntegerParam("minsplit", lower = 5, upper = 20),
+  makeIntegerParam("minbucket", lower = 3, upper = 10),
+  makeNumericParam("cp", lower = 0.01, upper = 0.1),
+  makeIntegerParam("maxdepth", lower = 4, upper = 10))
+```
+
+```{r}
+randomS <- makeTuneControlRandom(maxit = 50)
+cvT <- makeResampleDesc("CV", iters = 5)
+```
+
+```{r}
+library(parallel)
+library(parallelMap)
+```
+
+```{r}
+clustercore = detectCores()
+parallelStartSocket(clustercore)
+```
+
+```{r}
+tunedTree <- tuneParams(tree, task = zTask,
+                        resampling =  cvT,
+                        par.set = myHyperParamsTree,
+                        control = randomS)
+```
+
+```{r}
+parallelStop()
+```
+
+```{r}
+tunedTree
+```
+
+```{r}
+tree_tuned <- setHyperPars(tree, par.vals = tunedTree$x)
+```
+
+```{r}
+tree_tune_model <- train(tree_tuned, zTask)
+```
+
+```{r}
+install.packages("rpart.plot")
+library(rpart.plot)
+```
+
+```{r}
+tree_viz <- getLearnerModel(tree_tune_model)
+```
+
+```{r}
+rpart.plot(tree_viz, roundint = FALSE, box.palette = "BuBn", type = 5)
+```
+
+```{r}
+printcp(tree_viz)
+```
+
+```{r}
+summary(tree_viz)
+```
+
